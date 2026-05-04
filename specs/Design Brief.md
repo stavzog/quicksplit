@@ -72,3 +72,10 @@ Here is a technical summary of **QuickSplit** as it stands. This summary consoli
 | **Data Representation** | **Complete** | Synthetic dataset of 1,000+ entries generated for Grade B/A testing. |
 | **Settle-Up Logic** | **In Progress** | Implementing the two-pointer greedy algorithm to project the log onto the `DebtGraph`. |
 | **Cloud Sync** | **Planned** | Integrating JSONBin.io for the A+ contract "Cloud Room" feature. |
+
+---
+
+## Questions for Professor:
+
+1. Does every entity need to have an interface, cause that is inefficient/bad practice/bad code. In actuallity, if we wanted to actually write good code, we would have no interfaces because our architecture does not have any inheritance. Everything is its own entity, there are no multiple types of transactions, or quicksplitSystems, or DebtGraph. Just one type of each. DON'T MAKE ME WRITE BAD CODE!
+2. Check features, Make sure features are good.
