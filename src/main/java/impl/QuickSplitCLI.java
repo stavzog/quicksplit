@@ -6,20 +6,19 @@ import java.nio.file.Paths;
 import java.util.*;
 
 /**
- * QuickSplitCLI is the command-line interface for the QuickSplit application.
- * It provides a simple interactive loop to manage expenses and settle debts across multiple rooms.
- * This version uses UUIDs for user identification to support collision-free distributed sync.
+ * QuickSplitCLI provides a person-centered, interactive flow for managing expenses.
+ * It prioritizes user identity and streamlined transaction logging to reduce social overhead.
  */
 public class QuickSplitCLI {
 
     private final QuickSplitSystem system;
     private final Scanner scanner;
-
-    /**
-     * Map names to UUID strings within the session for easier command entry.
-     * This cache is local to the CLI session to map friendly names to the unique IDs.
-     */
     private final Map<String, String> nameToId = new HashMap<>();
+
+    private String currentUserName;
+    private String currentUserId;
+    private String lastUsedFilename;
+    private boolean isCloudMode = false;
 
     public QuickSplitCLI() {
         this.system = new QuickSplitSystem();
@@ -27,15 +26,86 @@ public class QuickSplitCLI {
     }
 
     public void start() {
-        System.out.println("QuickSplit CLI - Simplified Expense Sharing");
-        System.out.println("Type 'help' for a list of commands.");
+        System.out.println("=== Welcome to QuickSplit ===");
 
+        // 1. Identify the user
+        System.out.print("Enter your name: ");
+        this.currentUserName = scanner.nextLine().trim();
+        if (currentUserName.isEmpty()) currentUserName = "Anonymous";
+
+        // Setup initial user ID (UUID)
+        this.currentUserId = UUID.randomUUID().toString();
+        nameToId.put(currentUserName, currentUserId);
+
+        // 2. Initial Room Action
+        initialSetup();
+
+        // 3. Main Command Loop
+        mainLoop();
+    }
+
+    private void initialSetup() {
+        while (true) {
+            System.out.println("\nWould you like to:");
+            System.out.println(" 1. Create a new room");
+            System.out.println(" 2. Join an existing room");
+            System.out.print("Selection (1/2): ");
+
+            String choice = scanner.nextLine().trim();
+            if (choice.equals("1")) {
+                String roomId = system.createRoom();
+                system.addUser(currentUserId, currentUserName);
+                System.out.println(" - New room created: " + roomId);
+                break;
+            } else if (choice.equals("2")) {
+                if (handleJoinProcess()) break;
+            } else {
+                System.out.println("Invalid selection.");
+            }
+        }
+    }
+
+    private boolean handleJoinProcess() {
+        System.out.println("\nLoad from:");
+        System.out.println(" 1. Local file");
+        System.out.println(" 2. Cloud (JSONBin)");
+        System.out.print("Selection (1/2): ");
+
+        String source = scanner.nextLine().trim();
+        if (source.equals("1")) {
+            System.out.print("Enter filename (e.g., trip.json): ");
+            String filename = scanner.nextLine().trim();
+            try {
+                String json = Files.readString(Paths.get(filename));
+                system.importRoom(json);
+                this.lastUsedFilename = filename;
+                this.isCloudMode = false;
+                syncLocalUserCache();
+                System.out.println(
+                    " - Successfully loaded room: " + system.getActiveRoomId()
+                );
+                return true;
+            } catch (Exception e) {
+                System.out.println(" - Error loading file: " + e.getMessage());
+            }
+        } else if (source.equals("2")) {
+            System.out.print("Enter Cloud Room ID: ");
+            String cloudId = scanner.nextLine().trim();
+            System.out.println(" - Cloud sync placeholder for ID: " + cloudId);
+            // This would call system.sync(cloudId) in future implementation
+            this.isCloudMode = true;
+            return false; // Loop back for now as cloud is not fully implemented
+        }
+        return false;
+    }
+
+    private void mainLoop() {
+        printHelp();
         while (true) {
             String activeRoom = system.getActiveRoomId();
-            String prompt = (activeRoom != null)
-                ? "[" + activeRoom + "] > "
-                : "> ";
-            System.out.print("\n" + prompt);
+            System.out.print(
+                "\n[" + currentUserName + " @ " + activeRoom + "] > "
+            );
 
             String input = scanner.nextLine().trim();
             if (input.isEmpty()) continue;
@@ -45,30 +115,27 @@ public class QuickSplitCLI {
 
             try {
                 switch (command) {
-                    case "new_room":
-                        handleNewRoom();
-                        break;
-                    case "join":
-                        handleJoin(parts);
-                        break;
                     case "add":
                         handleAdd(parts);
+                        break;
+                    case "log":
+                        handleViewLog();
                         break;
                     case "settleup":
                         handleSettleUp(parts);
                         break;
                     case "save":
-                        handleSave(parts);
+                        handleSave();
                         break;
-                    case "load":
-                        handleLoad(parts);
+                    case "join":
+                        initialSetup();
                         break;
                     case "help":
                         printHelp();
                         break;
                     case "exit":
                     case "quit":
-                        System.out.println("Goodbye!");
+                        System.out.println("Goodbye, " + currentUserName + "!");
                         return;
                     default:
                         System.out.println(
@@ -81,77 +148,71 @@ public class QuickSplitCLI {
         }
     }
 
-    private void handleNewRoom() {
-        String roomId = system.createRoom();
-        System.out.println(" - new room created and joined with id: " + roomId);
-    }
-
-    private void handleJoin(String[] parts) {
-        if (parts.length < 2) {
-            System.out.println("Usage: join <room_id>");
-            return;
-        }
-        String roomId = parts[1];
-        if (system.joinRoom(roomId)) {
-            System.out.println(" - successfully joined room: " + roomId);
-        } else {
-            System.out.println(" - error: room '" + roomId + "' not found.");
-        }
-    }
-
+    /**
+     * Optimized 'add' command: add <amt> [desc] [cur] [user]
+     */
     private void handleAdd(String[] parts) {
-        if (system.getActiveRoomId() == null) {
-            System.out.println(" - error: join or create a room first.");
-            return;
-        }
-
-        if (parts.length < 4) {
+        if (parts.length < 2) {
             System.out.println(
-                "Usage: add <amount> <user> <description> [currency]"
+                "Usage: add <amount> [description] [currency] [user]"
             );
             return;
         }
 
-        double amount;
-        try {
-            amount = Double.parseDouble(parts[1]);
-        } catch (NumberFormatException e) {
-            System.out.println(" - error: invalid amount.");
-            return;
-        }
+        double amount = Double.parseDouble(parts[1]);
+        String desc = (parts.length > 2) ? parts[2] : "expense";
+        String cur = (parts.length > 3) ? parts[3] : "USD";
+        String targetName = (parts.length > 4) ? parts[4] : currentUserName;
 
-        String userName = parts[2];
-        String description = parts[3];
-        String currency = (parts.length > 4) ? parts[4] : "USD";
-
-        // Ensure user exists in current session scope
-        // If not found, generate a globally unique UUID
-        String userId = nameToId.computeIfAbsent(userName, name -> {
+        // get or create User ID
+        String userId = nameToId.computeIfAbsent(targetName, name -> {
             String uuid = UUID.randomUUID().toString();
             system.addUser(uuid, name);
             return uuid;
         });
 
-        // Ensure user is registered in the active room's specific map
+        // ensure user is in the active room
         if (!system.getUsers().containsKey(userId)) {
-            system.addUser(userId, userName);
+            system.addUser(userId, targetName);
         }
 
-        system.logExpense(userId, amount, currency, description);
+        system.logExpense(userId, amount, cur, desc);
+    }
+
+    private void handleViewLog() {
+        Room room = system.getActiveRoom();
+        if (room == null) return;
+
+        List<Transaction> txs = room.getTransactions();
+        Map<String, String> userNames = room.getUsers();
+
+        System.out.println("\n--- Transaction Log ---");
+        if (txs.isEmpty()) {
+            System.out.println(" No transactions recorded.");
+        } else {
+            for (Transaction t : txs) {
+                String name = userNames.getOrDefault(t.getPayerId(), "Unknown");
+                System.out.printf(
+                    " - %s spent %.2f USD on '%s' (Original: %.2f %s)\n",
+                    name,
+                    t.getAmount(),
+                    t.getDescription(),
+                    t.getOriginalAmount(),
+                    t.getOriginalCurrency()
+                );
+            }
+        }
     }
 
     private void handleSettleUp(String[] parts) {
-        if (system.getActiveRoomId() == null) {
-            System.out.println(" - error: join or create a room first.");
-            return;
-        }
-
         String targetCurrency = (parts.length > 1) ? parts[1] : "USD";
         List<Settlement> results = system.calculateSettleUp(targetCurrency);
 
-        System.out.println();
+        System.out.println(
+            "\n--- Settlement Plan (" + targetCurrency.toUpperCase() + ") ---"
+        );
         if (results.isEmpty()) {
-            System.out.println(" - All settled up! No transactions needed.");
+            System.out.println(" All settled up!");
         } else {
             for (Settlement s : results) {
                 System.out.println(" - " + s.toString(system.getUsers()));
@@ -159,84 +220,59 @@ public class QuickSplitCLI {
         }
     }
 
-    private void handleSave(String[] parts) {
-        if (system.getActiveRoomId() == null) {
-            System.out.println(" - error: No active room to save.");
-            return;
-        }
-        if (parts.length < 2) {
-            System.out.println("Usage: save <filename>");
-            return;
-        }
+    private void handleSave() {
+        if (isCloudMode) {
+            System.out.println(" - Syncing to Cloud... (Placeholder)");
+        } else {
+            String filename = lastUsedFilename;
+            if (filename == null) {
+                System.out.print("Enter filename to save: ");
+                filename = scanner.nextLine().trim();
+                if (!filename.endsWith(".json")) filename += ".json";
+                lastUsedFilename = filename;
+            }
 
-        String filename = parts[1];
-        if (!filename.endsWith(".json")) {
-            filename += ".json";
-        }
-
-        try {
-            String json = system.exportActiveRoom();
-            Files.writeString(Paths.get(filename), json);
-            System.out.println(
-                " - successfully saved room '" +
-                    system.getActiveRoomId() +
-                    "' to " +
-                    filename
-            );
-        } catch (IOException e) {
-            System.out.println(" - error saving file: " + e.getMessage());
+            try {
+                String json = system.exportActiveRoom();
+                Files.writeString(Paths.get(filename), json);
+                System.out.println(" - Successfully saved to " + filename);
+            } catch (IOException e) {
+                System.out.println(" - Error saving: " + e.getMessage());
+            }
         }
     }
 
-    private void handleLoad(String[] parts) {
-        if (parts.length < 2) {
-            System.out.println("Usage: load <filename>");
-            return;
-        }
-
-        String filename = parts[1];
-        try {
-            String json = Files.readString(Paths.get(filename));
-            system.importRoom(json);
-
-            // Re-sync nameToId map with loaded users to maintain session consistency
-            Map<String, String> loadedUsers = system.getUsers();
-            for (Map.Entry<String, String> entry : loadedUsers.entrySet()) {
-                nameToId.put(entry.getValue(), entry.getKey());
+    private void syncLocalUserCache() {
+        Map<String, String> roomUsers = system.getUsers();
+        for (Map.Entry<String, String> entry : roomUsers.entrySet()) {
+            nameToId.put(entry.getValue(), entry.getKey());
+            // If the user's name is already in the room, use that ID for current session
+            if (entry.getValue().equalsIgnoreCase(currentUserName)) {
+                this.currentUserId = entry.getKey();
             }
-
-            System.out.println(
-                " - successfully loaded room: " + system.getActiveRoomId()
-            );
-        } catch (IOException e) {
-            System.out.println(" - error loading file: " + e.getMessage());
-        } catch (Exception e) {
-            System.out.println(" - error parsing room data: " + e.getMessage());
         }
     }
 
     private void printHelp() {
-        System.out.println("Available commands:");
+        System.out.println("\nCommands:");
         System.out.println(
-            "  new_room                      - Create and join a new shared room"
+            "  add <amt> [desc] [cur] [user]  - Log an expense (defaults to you)"
         );
         System.out.println(
-            "  join <id>                     - Join an existing room by ID"
+            "  log                            - View transaction history"
         );
         System.out.println(
-            "  add <amt> <user> <desc> [cur] - Log an expense (e.g., add 10 Alice food eur)"
+            "  settleup [currency]            - Show optimized payments"
         );
         System.out.println(
-            "  settleup [currency]           - Calculate the optimized settlement"
+            "  save                           - Persist data (local/cloud)"
         );
         System.out.println(
-            "  save <filename>               - Save the current room data to a JSON file"
+            "  join                           - Switch or create a new room"
         );
+        System.out.println("  help                           - Show this menu");
         System.out.println(
-            "  load <filename>               - Load room data from a JSON file"
-        );
-        System.out.println(
-            "  exit                          - Quit the application"
+            "  exit                           - Close QuickSplit"
         );
     }
 

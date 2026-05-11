@@ -1,7 +1,6 @@
 package impl;
 
 import java.util.*;
-import mjson.Json;
 import util.CurrencyService;
 import util.IDGenerator;
 
@@ -173,7 +172,7 @@ public class QuickSplitSystem {
             }
         }
 
-        // 2. Separate into Debtors and Creditors
+        // separate into debtors and creditors
         List<UserBalance> debtors = new ArrayList<>();
         List<UserBalance> creditors = new ArrayList<>();
 
@@ -186,11 +185,11 @@ public class QuickSplitSystem {
             }
         }
 
-        // 3. Sort extremes
+        // sort extremes
         debtors.sort(Comparator.comparingDouble(u -> u.balance));
         creditors.sort((u1, u2) -> Double.compare(u2.balance, u1.balance));
 
-        // 4. Two-Pointer Matching
+        // two pointer patching
         List<Settlement> settlements = new ArrayList<>();
         double rateToTarget = currencyService.getRate(
             baseCurrency,

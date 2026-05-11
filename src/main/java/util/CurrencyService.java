@@ -65,6 +65,10 @@ public class CurrencyService {
      * Uses an in-memory cache to avoid redundant API calls.
      */
     public double getRate(String from, String to) {
+        if (from.equals(to)) {
+            return 1.0;
+        }
+
         from = from.toUpperCase();
         to = to.toUpperCase();
 
