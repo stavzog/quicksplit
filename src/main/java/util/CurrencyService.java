@@ -9,16 +9,16 @@ import java.util.Map;
 import mjson.Json;
 
 /**
- * Service for handling currency conversion using the Frankfurter API.
+ * Service for handling currency conversion using the Frankfurter v2 API.
  * Implements an in-memory cache to minimize network overhead.
  */
 public class CurrencyService {
 
-    // Frankfurter API endpoint for fetching currency rates
-    // docs at https://frankfurter.dev
-    private static final String API_URL = "https://api.frankfurter.app/latest";
-    // store the results of the api lookup into RAM cache so that we
-    // don't need to make repeated calls to the api for the same currencies
+    // Frankfurter v2 API endpoint for fetching single pair rates
+    private static final String API_BASE_URL =
+        "https://api.frankfurter.dev/v2/rate";
+
+    // in memory cache for exchange rates
     private final Map<String, Double> ratesCache = new HashMap<>();
     private final String baseCurrency;
     private final HttpClient httpClient;
@@ -61,20 +61,25 @@ public class CurrencyService {
     }
 
     /**
-     * Fetches the exchange rate between two currencies.
+     * Fetches the exchange rate between two currencies using the v2 /rate/BASE/QUOTE endpoint.
      * Uses an in-memory cache to avoid redundant API calls.
      */
     public double getRate(String from, String to) {
+        from = from.toUpperCase();
+        to = to.toUpperCase();
+
         String cacheKey = from + "_" + to;
         if (ratesCache.containsKey(cacheKey)) {
             return ratesCache.get(cacheKey);
         }
 
         try {
-            // build the request like https://api.frankfurter.app/latest?from=EUR&to=USD
-            String url = String.format("%s?from=%s&to=%s", API_URL, from, to);
+            // New Frankfurter v2 format: https://api.frankfurter.dev/v2/rate/EUR/USD
+            String url = String.format("%s/%s/%s", API_BASE_URL, from, to);
+
             HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
+                .header("Accept", "application/json")
                 .GET()
                 .build();
 
@@ -84,19 +89,26 @@ public class CurrencyService {
             );
 
             if (response.statusCode() != 200) {
-                throw new RuntimeException(
-                    "Failed to fetch exchange rate: HTTP " +
-                        response.statusCode()
-                );
+                // Parse error message if available
+                String errorMsg;
+                try {
+                    errorMsg = Json.read(response.body())
+                        .at("message")
+                        .asString();
+                } catch (Exception e) {
+                    errorMsg = "HTTP " + response.statusCode();
+                }
+                throw new RuntimeException("API Error: " + errorMsg);
             }
 
-            // parse response
-            // format: {"amount":1.0,"base":"EUR","date":"2024-05-03","rates":{"USD":1.0765}}
+            // v2 response format: {"amount":1.0,"base":"EUR","date":"2024-05-22","quote":"USD","rate":1.0825}
             Json data = Json.read(response.body());
-            double rate = data.at("rates").at(to).asDouble();
+            double rate = data.at("rate").asDouble();
 
+            // Cache the retrieved rate
             ratesCache.put(cacheKey, rate);
-            // also cache the inverse rate to be efficient
+
+            // Cache the inverse rate to be efficient
             ratesCache.put(to + "_" + from, 1.0 / rate);
 
             return rate;
