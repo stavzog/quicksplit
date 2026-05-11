@@ -35,3 +35,6 @@ gradle-app.setting
 
 #  Ignore local properties that might contain sensitive keys or local paths
 local.properties
+
+bin/
+target/
