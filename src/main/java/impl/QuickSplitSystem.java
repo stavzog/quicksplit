@@ -9,6 +9,9 @@ import util.IDGenerator;
  * QuickSplitSystem is the central coordinator for managing multiple rooms.
  * It provides the logic for switching between rooms and delegates expense logging
  * and settlement calculations to the active Room instance.
+ *
+ * This implementation uses String user IDs (UUIDs) to ensure data integrity
+ * when synchronizing across multiple distributed clients.
  */
 public class QuickSplitSystem {
 
@@ -59,35 +62,49 @@ public class QuickSplitSystem {
         return activeRoom != null ? activeRoom.getRoomId() : null;
     }
 
+    public Room getActiveRoom() {
+        return activeRoom;
+    }
+
+    public void addRoom(Room room) {
+        rooms.put(room.getRoomId(), room);
+        activeRoom = room;
+    }
+
     /**
-     * Exports the active room to a JSON string.
-     * @return The JSON representation of the room.
+     * Exports the active room to a JSON string using the custom serializer.
+     * @return The JSON representation of the active room.
      */
     public String exportActiveRoom() {
         if (activeRoom == null) {
             throw new IllegalStateException("No active room to export.");
         }
-        return activeRoom.toJson().toString();
+        return CustomJsonSerializer.serializeRooms(
+            Collections.singletonList(activeRoom)
+        );
     }
 
     /**
-     * Imports a room from a JSON string and sets it as active.
-     * @param jsonString The JSON data representing a room.
+     * Imports rooms from a JSON string and sets the last one as active.
+     * @param jsonString The JSON data representing rooms.
      */
     public void importRoom(String jsonString) {
-        Json json = Json.read(jsonString);
-        Room room = Room.fromJson(json);
-        rooms.put(room.getRoomId(), room);
-        activeRoom = room;
+        List<Room> importedRooms = CustomJsonSerializer.deserializeRooms(
+            jsonString
+        );
+        for (Room room : importedRooms) {
+            rooms.put(room.getRoomId(), room);
+            activeRoom = room;
+        }
     }
 
-    public void addUser(int userId, String name) {
+    public void addUser(String userId, String name) {
         if (activeRoom != null) {
             activeRoom.addUser(userId, name);
         }
     }
 
-    public Map<Integer, String> getUsers() {
+    public Map<String, String> getUsers() {
         return activeRoom != null
             ? activeRoom.getUsers()
             : Collections.emptyMap();
@@ -97,7 +114,7 @@ public class QuickSplitSystem {
      * Logs an expense for the active room with automatic conversion to base currency.
      */
     public void logExpense(
-        int payerId,
+        String payerId,
         double amount,
         String currency,
         String description
@@ -132,12 +149,12 @@ public class QuickSplitSystem {
             return Collections.emptyList();
         }
 
-        Map<Integer, String> users = activeRoom.getUsers();
+        Map<String, String> users = activeRoom.getUsers();
         List<Transaction> transactions = activeRoom.getTransactions();
 
         // 1. Accumulation Scan
-        Map<Integer, Double> netBalances = new HashMap<>();
-        for (Integer userId : users.keySet()) {
+        Map<String, Double> netBalances = new HashMap<>();
+        for (String userId : users.keySet()) {
             netBalances.put(userId, 0.0);
         }
 
@@ -151,7 +168,7 @@ public class QuickSplitSystem {
                 netBalances.get(t.getPayerId()) + totalAmount
             );
 
-            for (Integer userId : users.keySet()) {
+            for (String userId : users.keySet()) {
                 netBalances.put(userId, netBalances.get(userId) - share);
             }
         }
@@ -160,7 +177,7 @@ public class QuickSplitSystem {
         List<UserBalance> debtors = new ArrayList<>();
         List<UserBalance> creditors = new ArrayList<>();
 
-        for (Map.Entry<Integer, Double> entry : netBalances.entrySet()) {
+        for (Map.Entry<String, Double> entry : netBalances.entrySet()) {
             double bal = entry.getValue();
             if (bal < -0.001) {
                 debtors.add(new UserBalance(entry.getKey(), bal));
@@ -214,12 +231,16 @@ public class QuickSplitSystem {
 
     private static class UserBalance {
 
-        int id;
+        String id;
         double balance;
 
-        UserBalance(int id, double balance) {
+        UserBalance(String id, double balance) {
             this.id = id;
             this.balance = balance;
         }
+    }
+
+    public void sync(String roomId) {
+        // Future implementation for JSONBin.io cloud synchronization.
     }
 }

@@ -1,17 +1,19 @@
 package impl;
 
 import java.util.*;
-import mjson.Json;
 
 /**
  * Encapsulates all data related to a specific expense-sharing room.
  * This includes the room's unique identifier, the users participating in the room,
  * and the history of transactions.
+ *
+ * This class uses String IDs for users to ensure global uniqueness across
+ * different devices during cloud synchronization.
  */
 public class Room {
 
     private final String roomId;
-    private final Map<Integer, String> users = new HashMap<>();
+    private final Map<String, String> users = new HashMap<>();
     private final List<Transaction> transactions = new ArrayList<>();
 
     public Room(String roomId) {
@@ -24,10 +26,10 @@ public class Room {
 
     /**
      * Adds a user to this specific room.
-     * @param userId Unique identifier for the user.
+     * @param userId Unique identifier for the user (UUID string).
      * @param name Display name of the user.
      */
-    public void addUser(int userId, String name) {
+    public void addUser(String userId, String name) {
         users.put(userId, name);
     }
 
@@ -42,7 +44,7 @@ public class Room {
     /**
      * Returns an unmodifiable view of the users in this room.
      */
-    public Map<Integer, String> getUsers() {
+    public Map<String, String> getUsers() {
         return Collections.unmodifiableMap(users);
     }
 
@@ -61,41 +63,5 @@ public class Room {
             users.size(),
             transactions.size()
         );
-    }
-
-    public Json toJson() {
-        Json usersJson = Json.object();
-        for (Map.Entry<Integer, String> entry : users.entrySet()) {
-            usersJson.set(entry.getKey().toString(), entry.getValue());
-        }
-
-        Json transactionsJson = Json.array();
-        for (Transaction t : transactions) {
-            transactionsJson.add(t.toJson());
-        }
-
-        return Json.object()
-            .set("roomId", roomId)
-            .set("users", usersJson)
-            .set("transactions", transactionsJson);
-    }
-
-    public static Room fromJson(Json json) {
-        Room room = new Room(json.at("roomId").asString());
-
-        Json usersJson = json.at("users");
-        for (Map.Entry<String, Json> entry : usersJson.asJsonMap().entrySet()) {
-            room.addUser(
-                Integer.parseInt(entry.getKey()),
-                entry.getValue().asString()
-            );
-        }
-
-        Json transactionsJson = json.at("transactions");
-        for (Json tJson : transactionsJson.asJsonList()) {
-            room.logExpense(Transaction.fromJson(tJson));
-        }
-
-        return room;
     }
 }

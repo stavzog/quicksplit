@@ -8,14 +8,18 @@ import java.util.*;
 /**
  * QuickSplitCLI is the command-line interface for the QuickSplit application.
  * It provides a simple interactive loop to manage expenses and settle debts across multiple rooms.
+ * This version uses UUIDs for user identification to support collision-free distributed sync.
  */
 public class QuickSplitCLI {
 
     private final QuickSplitSystem system;
     private final Scanner scanner;
-    // Map names to IDs within the session for easier command entry
-    private final Map<String, Integer> nameToId = new HashMap<>();
-    private int nextUserId = 1;
+
+    /**
+     * Map names to UUID strings within the session for easier command entry.
+     * This cache is local to the CLI session to map friendly names to the unique IDs.
+     */
+    private final Map<String, String> nameToId = new HashMap<>();
 
     public QuickSplitCLI() {
         this.system = new QuickSplitSystem();
@@ -121,10 +125,11 @@ public class QuickSplitCLI {
         String currency = (parts.length > 4) ? parts[4] : "USD";
 
         // Ensure user exists in current session scope
-        int userId = nameToId.computeIfAbsent(userName, name -> {
-            int id = nextUserId++;
-            system.addUser(id, name);
-            return id;
+        // If not found, generate a globally unique UUID
+        String userId = nameToId.computeIfAbsent(userName, name -> {
+            String uuid = UUID.randomUUID().toString();
+            system.addUser(uuid, name);
+            return uuid;
         });
 
         // Ensure user is registered in the active room's specific map
@@ -195,12 +200,9 @@ public class QuickSplitCLI {
             system.importRoom(json);
 
             // Re-sync nameToId map with loaded users to maintain session consistency
-            Map<Integer, String> loadedUsers = system.getUsers();
-            for (Map.Entry<Integer, String> entry : loadedUsers.entrySet()) {
+            Map<String, String> loadedUsers = system.getUsers();
+            for (Map.Entry<String, String> entry : loadedUsers.entrySet()) {
                 nameToId.put(entry.getValue(), entry.getKey());
-                if (entry.getKey() >= nextUserId) {
-                    nextUserId = entry.getKey() + 1;
-                }
             }
 
             System.out.println(

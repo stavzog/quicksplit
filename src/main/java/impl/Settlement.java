@@ -7,23 +7,28 @@ package impl;
  */
 public class Settlement {
 
-    private final int debtorId;
-    private final int creditorId;
+    private final String debtorId;
+    private final String creditorId;
     private final double amount;
     private final String currency;
 
-    public Settlement(int debtorId, int creditorId, double amount, String currency) {
+    public Settlement(
+        String debtorId,
+        String creditorId,
+        double amount,
+        String currency
+    ) {
         this.debtorId = debtorId;
         this.creditorId = creditorId;
         this.amount = amount;
         this.currency = currency;
     }
 
-    public int getDebtorId() {
+    public String getDebtorId() {
         return debtorId;
     }
 
-    public int getCreditorId() {
+    public String getCreditorId() {
         return creditorId;
     }
 
@@ -41,9 +46,15 @@ public class Settlement {
      * @param userNames A map containing user IDs and their corresponding display names.
      * @return A formatted string like "Alice pays Bob 10.50 USD"
      */
-    public String toString(java.util.Map<Integer, String> userNames) {
-        String debtorName = userNames.getOrDefault(debtorId, "User " + debtorId);
-        String creditorName = userNames.getOrDefault(creditorId, "User " + creditorId);
+    public String toString(java.util.Map<String, String> userNames) {
+        String debtorName = userNames.getOrDefault(
+            debtorId,
+            "User " + debtorId
+        );
+        String creditorName = userNames.getOrDefault(
+            creditorId,
+            "User " + creditorId
+        );
         return String.format(
             "%s pays %s %.2f %s",
             debtorName,
@@ -56,7 +67,7 @@ public class Settlement {
     @Override
     public String toString() {
         return String.format(
-            "User %d pays User %d %.2f %s",
+            "User %s pays User %s %.2f %s",
             debtorId,
             creditorId,
             amount,
