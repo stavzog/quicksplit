@@ -1,0 +1,53 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+group = 'com.quicksplit'
+version = '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.8.1'
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
+application {
+    mainClassName = 'impl.QuickSplitCLI'
+}
+
+// Configure the jar task to create an executable "Fat JAR"
+// This fulfills the "standalone executable" requirement from the Design Brief
+jar {
+    manifest {
+        attributes(
+            'Main-Class': 'impl.QuickSplitCLI'
+        )
+    }
+
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+// ensure the CLI can accept interactive input
+run {
+    standardInput = System.in
+}
+
+// support for testing
+test {
+    useJUnitPlatform()
+    testLogging {
+        events "passed", "skipped", "failed"
+        showStandardStreams = true // See println output in console
+    }
+}
