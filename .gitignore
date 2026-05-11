@@ -33,5 +33,5 @@ gradle-app.setting
 # Local task name cache
 .gradletasknamecache
 
-# Ignore local properties that might contain sensitive keys or local paths
+#  Ignore local properties that might contain sensitive keys or local paths
 local.properties
