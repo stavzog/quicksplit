@@ -1,18 +1,19 @@
 package impl;
 
 import java.util.*;
+import mjson.Json;
 import util.CurrencyService;
+import util.IDGenerator;
 
 /**
- * QuickSplitSystem is the central coordinator for managing users and transactions.
- * It provides the logic for logging expenses and calculating the optimized settlement plan
- * without the need for an external graph data structure, adhering to simplified architecture.
+ * QuickSplitSystem is the central coordinator for managing multiple rooms.
+ * It provides the logic for switching between rooms and delegates expense logging
+ * and settlement calculations to the active Room instance.
  */
 public class QuickSplitSystem {
 
-    // The transaction log acts as the source of truth for the room.
-    private final List<Transaction> transactions = new ArrayList<>();
-    private final Map<Integer, String> users = new HashMap<>();
+    private final Map<String, Room> rooms = new HashMap<>();
+    private Room activeRoom;
     private final CurrencyService currencyService;
     private final String baseCurrency = "USD";
 
@@ -20,16 +21,80 @@ public class QuickSplitSystem {
         this.currencyService = new CurrencyService(baseCurrency);
     }
 
-    public void addUser(int userId, String name) {
-        users.put(userId, name);
-    }
+    /**
+     * Creates a new room with a unique human-readable ID and sets it as the active room.
+     * @return The ID of the newly created room.
+     */
+    public String createRoom() {
+        String roomId = IDGenerator.generate();
 
-    public void logExpense(Transaction t) {
-        transactions.add(t);
+        // ensure uniqueness
+        while (rooms.containsKey(roomId)) {
+            roomId = IDGenerator.generate();
+        }
+        Room newRoom = new Room(roomId);
+        rooms.put(roomId, newRoom);
+        activeRoom = newRoom;
+        return roomId;
     }
 
     /**
-     * Helper method for the CLI to log an expense with automatic conversion to the base currency.
+     * Joins an existing room by its ID.
+     * @param roomId The ID of the room to join.
+     * @return true if the room exists and was joined, false otherwise.
+     */
+    public boolean joinRoom(String roomId) {
+        if (rooms.containsKey(roomId)) {
+            activeRoom = rooms.get(roomId);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Gets the ID of the currently active room.
+     * @return The active room ID or null if no room is active.
+     */
+    public String getActiveRoomId() {
+        return activeRoom != null ? activeRoom.getRoomId() : null;
+    }
+
+    /**
+     * Exports the active room to a JSON string.
+     * @return The JSON representation of the room.
+     */
+    public String exportActiveRoom() {
+        if (activeRoom == null) {
+            throw new IllegalStateException("No active room to export.");
+        }
+        return activeRoom.toJson().toString();
+    }
+
+    /**
+     * Imports a room from a JSON string and sets it as active.
+     * @param jsonString The JSON data representing a room.
+     */
+    public void importRoom(String jsonString) {
+        Json json = Json.read(jsonString);
+        Room room = Room.fromJson(json);
+        rooms.put(room.getRoomId(), room);
+        activeRoom = room;
+    }
+
+    public void addUser(int userId, String name) {
+        if (activeRoom != null) {
+            activeRoom.addUser(userId, name);
+        }
+    }
+
+    public Map<Integer, String> getUsers() {
+        return activeRoom != null
+            ? activeRoom.getUsers()
+            : Collections.emptyMap();
+    }
+
+    /**
+     * Logs an expense for the active room with automatic conversion to base currency.
      */
     public void logExpense(
         int payerId,
@@ -37,6 +102,12 @@ public class QuickSplitSystem {
         String currency,
         String description
     ) {
+        if (activeRoom == null) {
+            throw new IllegalStateException(
+                "No active room. Create or join a room first."
+            );
+        }
+
         double rate = currencyService.getRate(currency, baseCurrency);
         double convertedAmount = amount * rate;
 
@@ -49,37 +120,22 @@ public class QuickSplitSystem {
             description
         );
 
-        logExpense(t);
+        activeRoom.logExpense(t);
         System.out.println("Logged: " + t);
     }
 
     /**
-     * Internal helper to represent a person's net balance during settlement.
+     * Calculates the settlement plan for the active room using the Greedy Two-Pointer algorithm.
      */
-    private static class UserBalance {
-
-        int id;
-        double balance;
-
-        UserBalance(int id, double balance) {
-            this.id = id;
-            this.balance = balance;
-        }
-    }
-
-    /**
-     * Calculates the minimum number of transactions needed to settle all debts.
-     * This implements the Greedy Debt Simplification (Two-Pointer Method).
-     *
-     * @param targetCurrency The currency in which to display the settlement amounts.
-     * @return A list of strings describing who pays whom and how much.
-     */
-    public List<String> calculateSettleUp(String targetCurrency) {
-        if (users.isEmpty()) {
-            return Collections.singletonList("No users in the room.");
+    public List<Settlement> calculateSettleUp(String targetCurrency) {
+        if (activeRoom == null || activeRoom.getUsers().isEmpty()) {
+            return Collections.emptyList();
         }
 
-        // calculate the net balance for every person.
+        Map<Integer, String> users = activeRoom.getUsers();
+        List<Transaction> transactions = activeRoom.getTransactions();
+
+        // 1. Accumulation Scan
         Map<Integer, Double> netBalances = new HashMap<>();
         for (Integer userId : users.keySet()) {
             netBalances.put(userId, 0.0);
@@ -100,13 +156,12 @@ public class QuickSplitSystem {
             }
         }
 
-        // separate users into those who owe money and those who are owed.
+        // 2. Separate into Debtors and Creditors
         List<UserBalance> debtors = new ArrayList<>();
         List<UserBalance> creditors = new ArrayList<>();
 
         for (Map.Entry<Integer, Double> entry : netBalances.entrySet()) {
             double bal = entry.getValue();
-            // account for floating point inaccuracies
             if (bal < -0.001) {
                 debtors.add(new UserBalance(entry.getKey(), bal));
             } else if (bal > 0.001) {
@@ -114,62 +169,57 @@ public class QuickSplitSystem {
             }
         }
 
-        // simplification algorithm
-        // match debtors with creditors until balances are zeroed.
+        // 3. Sort extremes
         debtors.sort(Comparator.comparingDouble(u -> u.balance));
         creditors.sort((u1, u2) -> Double.compare(u2.balance, u1.balance));
 
-        List<String> settlements = new ArrayList<>();
+        // 4. Two-Pointer Matching
+        List<Settlement> settlements = new ArrayList<>();
         double rateToTarget = currencyService.getRate(
             baseCurrency,
             targetCurrency
         );
 
-        int d = 0; // debtor pointer
-        int c = 0; // creditor pointer
-
+        int d = 0;
+        int c = 0;
         while (d < debtors.size() && c < creditors.size()) {
             UserBalance debtor = debtors.get(d);
             UserBalance creditor = creditors.get(c);
 
-            // the amount to settle is the minimum of the debt and the credit available.
             double amountToSettle = Math.min(-debtor.balance, creditor.balance);
-
-            String debtorName = users.get(debtor.id);
-            String creditorName = users.get(creditor.id);
             double displayAmount = amountToSettle * rateToTarget;
 
             settlements.add(
-                String.format(
-                    "%s pays %s %.2f %s",
-                    debtorName,
-                    creditorName,
+                new Settlement(
+                    debtor.id,
+                    creditor.id,
                     displayAmount,
-                    targetCurrency.toUpperCase()
+                    targetCurrency
                 )
             );
 
-            // update balances
             debtor.balance += amountToSettle;
             creditor.balance -= amountToSettle;
 
-            // check for settled balances
             if (Math.abs(debtor.balance) < 0.001) d++;
             if (Math.abs(creditor.balance) < 0.001) c++;
-        }
-
-        if (settlements.isEmpty()) {
-            settlements.add("All settled up! No transactions needed.");
         }
 
         return settlements;
     }
 
-    public List<String> calculateSettleUp() {
+    public List<Settlement> calculateSettleUp() {
         return calculateSettleUp(baseCurrency);
     }
 
-    public void sync(String roomId) {
-        // Future implementation for JSONBin.io cloud synchronization.
+    private static class UserBalance {
+
+        int id;
+        double balance;
+
+        UserBalance(int id, double balance) {
+            this.id = id;
+            this.balance = balance;
+        }
     }
 }

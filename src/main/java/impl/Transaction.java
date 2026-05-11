@@ -1,5 +1,7 @@
 package impl;
 
+import mjson.Json;
+
 public class Transaction {
 
     private final int payerId;
@@ -49,6 +51,28 @@ public class Transaction {
         return description;
     }
 
+    public Json toJson() {
+        return Json.object()
+            .set("payerId", payerId)
+            .set("amount", amount)
+            .set("originalCurrency", originalCurrency)
+            .set("originalAmount", originalAmount)
+            .set("exchangeRate", exchangeRate)
+            .set("description", description);
+    }
+
+    public static Transaction fromJson(Json json) {
+        return new Transaction(
+            json.at("payerId").asInteger(),
+            json.at("amount").asDouble(),
+            json.at("originalCurrency").asString(),
+            json.at("originalAmount").asDouble(),
+            json.at("exchangeRate").asDouble(),
+            json.at("description").asString()
+        );
+    }
+
+    @Override
     public String toString() {
         return String.format(
             "Payer: %d, Description: %s, Amount: %.2f USD (Original: %.2f %s, Rate: %.4f)",
