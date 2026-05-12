@@ -1,14 +1,100 @@
-> new_room
- - new room with id approved-buggle-6
- 
-> add 10 Stavros food
-> add 20 Gavin gas eur
-> add 3 Ali gum yen
-> settleup usd
+```text
+=== Welcome to QuickSplit ===
+Enter your name: Stavros
 
- - Stavros owes 1 usd to Gavin
- - Ali owes 8 usd to Gavin
+--- Room Manager ---
+ 1. Create a new room
+ 2. Join a room
+Selection (1/2): 1
+ - New room created and joined: speedy-badger-42
 
- > save roadrip.json
+[Stavros @ speedy-badger-42 (Local)] > add 10 food
+Logged: Payer: Stavros, Description: food, Amount: 10.00 USD
 
- When the tool loads it asks for the users name. Then it asks if they want to join a room or create a new one. Joining a room will ask if they want to load from the cloud or a local file. It will also ask for a room id. Then the user is shown available actions in the room once they have joined: add transaction, see log, settle up, save (to file or local depending on how they loaded), join other room, help, exit. The difference is that the add command automatically uses the name provided at the beginnning. It is assumed that each user is adding their own transactions. The currency and description arguments should be optional. If a user wishes to add transactions of another individual they should add an optional user name parameter to the add command.
+[Stavros @ speedy-badger-42 (Local)] > add 20 gas eur Gavin
+Logged: Payer: Gavin, Description: gas, Amount: 21.65 USD
+
+[Stavros @ speedy-badger-42 (Local)] > add 3 gum jpy Ali
+Logged: Payer: Ali, Description: gum, Amount: 0.02 USD
+
+[Stavros @ speedy-badger-42 (Local)] > log
+
+--- Transaction Log for [speedy-badger-42] ---
+ - Stavros spent 10.00 USD on 'food'
+ - Gavin spent 21.65 USD on 'gas'
+ - Ali spent 0.02 USD on 'gum'
+
+[Stavros @ speedy-badger-42 (Local)] > settleup usd
+
+--- Settlement Plan (USD) ---
+ - Ali pays Gavin 10.54 USD
+ - Stavros pays Gavin 0.56 USD
+
+[Stavros @ speedy-badger-42 (Local)] > save
+
+You haven't specified where to save your data yet.
+ 1. Local file
+ 2. Cloud (JSONBin)
+Selection (1/2): 1
+Enter filename to save to: roadtrip.json
+ - Saving all rooms locally...
+ - Local Save Successful.
+
+[Stavros @ speedy-badger-42 (Local)] > exit
+Goodbye, Stavros!
+```
+
+## join local room
+
+```text
+=== Welcome to QuickSplit ===
+Enter your name: Stavros
+
+--- Room Manager ---
+ 1. Create a new room
+ 2. Join a room
+Selection (1/2): 2
+
+Where should we look for rooms?
+ 1. A local file (.json)
+ 2. The Cloud (JSONBin)
+Selection (1/2): 1
+Enter filename (e.g., trips.json): roadtrip.json
+ - File loaded.
+
+Available Rooms in Memory:
+ 1. speedy-badger-42
+ 2. Load a different file/source
+Selection: 1
+ - Joined: speedy-badger-42
+
+[Stavros @ speedy-badger-42 (Local)] > 
+```
+
+## cloud flow
+
+```text
+=== Welcome to QuickSplit ===
+Enter your name: Gavin
+
+--- Room Manager ---
+ 1. Create a new room
+ 2. Join a room
+Selection (1/2): 2
+
+Where should we look for rooms?
+ 1. A local file (.json)
+ 2. The Cloud (JSONBin)
+Selection (1/2): 2
+Enter Room ID to fetch from Cloud: speedy-badger-42
+ - Fetching room from cloud...
+ - Successfully joined cloud room: speedy-badger-42
+
+[Gavin @ speedy-badger-42 (Cloud)] > add 15 snacks
+Logged: Payer: Gavin, Description: snacks, Amount: 15.00 USD
+
+[Gavin @ speedy-badger-42 (Cloud)] > sync
+ - Fetching latest cloud data for safe merge...
+ - Pushing merged vault back to cloud...
+ - Cloud Sync Successful.
+```
