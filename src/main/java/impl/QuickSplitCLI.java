@@ -76,114 +76,96 @@ public class QuickSplitCLI {
     private boolean handleJoinContextually() {
         List<String> availableRooms = system.getAvailableRooms();
 
-        // SCENARIO A: currently in cloud mode
-        if (isCloudMode && storageService != null) {
-            System.out.print("Enter Room ID to fetch from Cloud: ");
-            String roomId = scanner.nextLine().trim();
-
-            // try joining local first
-            if (system.joinRoom(roomId)) {
-                System.out.println(
-                    " - Switched to local cache of room: " + roomId
-                );
-                syncLocalUserCache();
-                return true;
-            }
-
-            // otherwise, fetch from the cloud using the storage service
-            try {
-                System.out.println(" - Fetching room from cloud...");
-                Room fetchedRoom = storageService.fetchRoom(roomId);
-
-                if (fetchedRoom != null) {
-                    system.addRoom(fetchedRoom);
-                    system.joinRoom(roomId);
-                    syncLocalUserCache();
-                    System.out.println(
-                        " - Successfully joined cloud room: " + roomId
-                    );
-                    return true;
-                } else {
-                    System.out.println(
-                        " - Room '" + roomId + "' not found in Cloud."
-                    );
-                    return false;
-                }
-            } catch (Exception e) {
-                System.out.println(" - Cloud Error: " + e.getMessage());
-                return false;
-            }
-        }
-
-        // SCENARIO B: local data already in memory
+        System.out.println();
         if (!availableRooms.isEmpty()) {
-            System.out.println("\nAvailable Rooms in Memory:");
+            System.out.println("Available Rooms in Memory:");
             for (int i = 0; i < availableRooms.size(); i++) {
                 System.out.println(
                     " " + (i + 1) + ". " + availableRooms.get(i)
                 );
             }
-            System.out.println(
-                " " +
-                    (availableRooms.size() + 1) +
-                    ". Load a different file/source"
-            );
-            System.out.print("Selection: ");
-
-            try {
-                int selection = Integer.parseInt(scanner.nextLine().trim());
-                if (selection > 0 && selection <= availableRooms.size()) {
-                    String selectedId = availableRooms.get(selection - 1);
-                    system.joinRoom(selectedId);
-                    syncLocalUserCache();
-                    System.out.println(" - Joined: " + selectedId);
-                    return true;
-                } else if (selection == availableRooms.size() + 1) {
-                    return handleLoadSourceSelection();
-                }
-            } catch (Exception e) {
-                System.out.println("Invalid selection.");
-            }
-            return false;
         }
 
-        // SCENARIO C: nothing in memory yet
-        return handleLoadSourceSelection();
-    }
+        int offset = availableRooms.size();
+        System.out.println(
+            " " + (offset + 1) + ". Fetch room from Cloud (JSONBin)"
+        );
+        System.out.println(" " + (offset + 2) + ". Load rooms from Local File");
+        System.out.print("Selection: ");
 
-    /**
-     * Final fallback: Asks where to look for data if nothing is known.
-     */
-    private boolean handleLoadSourceSelection() {
-        System.out.println("\nWhere should we look for rooms?");
-        System.out.println(" 1. A local file (.json)");
-        System.out.println(" 2. The Cloud (JSONBin)");
-        System.out.print("Selection (1/2): ");
+        try {
+            int selection = Integer.parseInt(scanner.nextLine().trim());
+            if (selection > 0 && selection <= offset) {
+                String selectedId = availableRooms.get(selection - 1);
+                system.joinRoom(selectedId);
+                syncLocalUserCache();
+                System.out.println(" - Joined: " + selectedId);
+                return true;
+            } else if (selection == offset + 1) {
+                storageService = new CloudStorageService();
+                storageService.setTarget(null);
+                isCloudMode = true;
 
-        String choice = scanner.nextLine().trim();
-        if (choice.equals("1")) {
-            System.out.print("Enter filename (e.g., trips.json): ");
-            String filename = scanner.nextLine().trim();
+                System.out.print("Enter Room ID to fetch from Cloud: ");
+                String roomId = scanner.nextLine().trim();
 
-            storageService = new LocalStorageService();
-            storageService.setTarget(filename);
-            isCloudMode = false;
-
-            try {
-                Collection<Room> loadedRooms = storageService.load();
-                for (Room room : loadedRooms) {
-                    system.addRoom(room);
+                // try joining local first
+                if (system.joinRoom(roomId)) {
+                    System.out.println(
+                        " - Switched to local cache of room: " + roomId
+                    );
+                    syncLocalUserCache();
+                    return true;
                 }
-                System.out.println(" - File loaded.");
-                return handleJoinContextually(); // Recurse to show the newly loaded rooms
-            } catch (Exception e) {
-                System.out.println(" - Error loading file: " + e.getMessage());
+
+                // otherwise, fetch from the cloud using the storage service
+                try {
+                    System.out.println(" - Fetching room from cloud...");
+                    Room fetchedRoom = storageService.fetchRoom(roomId);
+
+                    if (fetchedRoom != null) {
+                        system.addRoom(fetchedRoom);
+                        system.joinRoom(roomId);
+                        syncLocalUserCache();
+                        System.out.println(
+                            " - Successfully joined cloud room: " + roomId
+                        );
+                        return true;
+                    } else {
+                        System.out.println(
+                            " - Room '" + roomId + "' not found in Cloud."
+                        );
+                        return false;
+                    }
+                } catch (Exception e) {
+                    System.out.println(" - Cloud Error: " + e.getMessage());
+                    return false;
+                }
+            } else if (selection == offset + 2) {
+                System.out.print("Enter filename (e.g., trips.json): ");
+                String filename = scanner.nextLine().trim();
+
+                storageService = new LocalStorageService();
+                storageService.setTarget(filename);
+                isCloudMode = false;
+
+                try {
+                    Collection<Room> loadedRooms = storageService.load();
+                    for (Room room : loadedRooms) {
+                        system.addRoom(room);
+                    }
+                    System.out.println(" - File loaded.");
+                    return handleJoinContextually(); // Recurse to show the newly loaded rooms
+                } catch (Exception e) {
+                    System.out.println(
+                        " - Error loading file: " + e.getMessage()
+                    );
+                }
+            } else {
+                System.out.println("Invalid selection.");
             }
-        } else if (choice.equals("2")) {
-            storageService = new CloudStorageService();
-            storageService.setTarget(null); // use default bin setup in service
-            isCloudMode = true;
-            return handleJoinContextually(); // Recurse to enter cloud ID
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid selection.");
         }
         return false;
     }
@@ -292,7 +274,25 @@ public class QuickSplitCLI {
             system.addUser(userId, targetName);
         }
 
-        system.logExpense(userId, amount, cur, desc);
+        Transaction t = system.logExpense(userId, amount, cur, desc);
+        String msg = String.format(
+            "Payer: %s, Description: %s, Amount: %.2f %s",
+            targetName,
+            desc,
+            amount,
+            cur.toUpperCase()
+        );
+
+        if (!cur.toUpperCase().equals(system.getBaseCurrency())) {
+            msg += String.format(
+                " (Original: %.2f %s, Rate: %.2f)",
+                t.getOriginalAmount(),
+                t.getOriginalCurrency(),
+                t.getExchangeRate()
+            );
+        }
+
+        System.out.println(msg);
     }
 
     private void handleViewLog() {
@@ -374,14 +374,26 @@ public class QuickSplitCLI {
                     : " - Saving all rooms locally..."
             );
 
-            // Execute the persistence strategy defined by the underlying service
+            // Record which rooms we currently care about in memory
+            Set<String> locallyKnownRooms = new HashSet<>(
+                system.getAvailableRooms()
+            );
+
             Collection<Room> syncedRooms = storageService.save(
                 system.getAllRooms()
             );
 
-            // Reload the newly merged state back into the system
+            // reload the newly merged state only for rooms we actually care about
+            String activeRoomId = system.getActiveRoomId();
             for (Room room : syncedRooms) {
-                system.addRoom(room);
+                if (locallyKnownRooms.contains(room.getRoomId())) {
+                    system.addRoom(room);
+                }
+            }
+
+            // restore the active room context
+            if (activeRoomId != null) {
+                system.joinRoom(activeRoomId);
             }
 
             System.out.println(
@@ -394,6 +406,7 @@ public class QuickSplitCLI {
         }
     }
 
+    // sync the local user cache with the system's user map
     private void syncLocalUserCache() {
         Map<String, String> roomUsers = system.getUsers();
         for (Map.Entry<String, String> entry : roomUsers.entrySet()) {

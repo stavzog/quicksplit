@@ -83,7 +83,9 @@ public class QuickSplitSystem {
 
     public void addRoom(Room room) {
         rooms.put(room.getRoomId(), room);
-        activeRoom = room;
+        if (activeRoom == null) {
+            activeRoom = room;
+        }
     }
 
     public void addUser(String userId, String name) {
@@ -101,7 +103,7 @@ public class QuickSplitSystem {
     /**
      * Logs an expense for the active room with automatic conversion to base currency.
      */
-    public void logExpense(
+    public Transaction logExpense(
         String payerId,
         double amount,
         String currency,
@@ -126,7 +128,7 @@ public class QuickSplitSystem {
         );
 
         activeRoom.logExpense(t);
-        System.out.println("Logged: " + t);
+        return t;
     }
 
     /**
@@ -226,5 +228,9 @@ public class QuickSplitSystem {
             this.id = id;
             this.balance = balance;
         }
+    }
+
+    public String getBaseCurrency() {
+        return baseCurrency;
     }
 }

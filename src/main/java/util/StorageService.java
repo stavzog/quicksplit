@@ -9,7 +9,6 @@ import java.util.Collection;
  * handle the specific logic for where data comes from and where it goes.
  */
 public interface StorageService {
-
     /**
      * Configures the target destination/source for this storage service.
      * For local storage, this could be a filename. For cloud storage, a Bin ID.

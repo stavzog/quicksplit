@@ -46,15 +46,14 @@ public class CloudStorageService implements StorageService {
 
     @Override
     public Collection<Room> save(Collection<Room> localRooms) throws Exception {
-        // 1. Fetch current cloud state
         Collection<Room> cloudRooms = load();
 
-        // 2. Merge local rooms into cloud state safely
         Map<String, Room> mergedMap = new HashMap<>();
         for (Room cloudRoom : cloudRooms) {
             mergedMap.put(cloudRoom.getRoomId(), cloudRoom);
         }
 
+        // merge local rooms with cloud rooms
         for (Room localRoom : localRooms) {
             if (mergedMap.containsKey(localRoom.getRoomId())) {
                 mergedMap.get(localRoom.getRoomId()).merge(localRoom);
@@ -65,10 +64,9 @@ public class CloudStorageService implements StorageService {
 
         Collection<Room> mergedRooms = mergedMap.values();
 
-        // 3. Export the merged vault
         String jsonToPush = CustomJsonSerializer.serializeRooms(mergedRooms);
 
-        // 4. Push safely back to the cloud
+        // push to cloud
         updateBinString(jsonToPush);
 
         return mergedRooms;

@@ -30,7 +30,9 @@ public class LocalStorageService implements StorageService {
     @Override
     public Collection<Room> save(Collection<Room> rooms) throws Exception {
         if (filename == null || filename.isEmpty()) {
-            throw new IllegalStateException("Storage target (filename) is not set.");
+            throw new IllegalStateException(
+                "Storage target (filename) is not set."
+            );
         }
 
         String json = CustomJsonSerializer.serializeRooms(rooms);
@@ -43,7 +45,9 @@ public class LocalStorageService implements StorageService {
     @Override
     public Collection<Room> load() throws Exception {
         if (filename == null || filename.isEmpty()) {
-            throw new IllegalStateException("Storage target (filename) is not set.");
+            throw new IllegalStateException(
+                "Storage target (filename) is not set."
+            );
         }
 
         Path path = Paths.get(filename);
