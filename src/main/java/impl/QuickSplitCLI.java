@@ -29,19 +29,15 @@ public class QuickSplitCLI {
     public void start() {
         System.out.println("=== Welcome to QuickSplit ===");
 
-        // 1. Identify the user
         System.out.print("Enter your name: ");
         this.currentUserName = scanner.nextLine().trim();
         if (currentUserName.isEmpty()) currentUserName = "Anonymous";
 
-        // Setup initial user ID (UUID)
         this.currentUserId = UUID.randomUUID().toString();
         nameToId.put(currentUserName, currentUserId);
 
-        // 2. Initial Setup
         roomManagerFlow();
 
-        // 3. Main Command Loop
         mainLoop();
     }
 
@@ -155,7 +151,7 @@ public class QuickSplitCLI {
                         system.addRoom(room);
                     }
                     System.out.println(" - File loaded.");
-                    return handleJoinContextually(); // Recurse to show the newly loaded rooms
+                    return handleJoinContextually();
                 } catch (Exception e) {
                     System.out.println(
                         " - Error loading file: " + e.getMessage()
@@ -374,7 +370,7 @@ public class QuickSplitCLI {
                     : " - Saving all rooms locally..."
             );
 
-            // Record which rooms we currently care about in memory
+            // record which rooms we currently care about in memory
             Set<String> locallyKnownRooms = new HashSet<>(
                 system.getAvailableRooms()
             );
@@ -391,7 +387,7 @@ public class QuickSplitCLI {
                 }
             }
 
-            // restore the active room context
+            // restore the active room
             if (activeRoomId != null) {
                 system.joinRoom(activeRoomId);
             }
