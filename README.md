@@ -24,8 +24,8 @@ Enter your name: Alice
 Selection (1/2): 1
  - New room created and joined: speedy-badger-42
 
-[Alice @ speedy-badger-42 (Local)] > add 30 Group Pizza eur
-Logged: Payer: Alice, Description: Group Pizza, Amount: 32.48 USD (Rate: 1.08)
+[Alice @ speedy-badger-42 (Local)] > add 30 Pizza eur
+Logged: Payer: Alice, Description: Pizza, Amount: 32.48 USD (Rate: 1.08)
 
 [Alice @ speedy-badger-42 (Local)] > add 15 Taxi usd Bob
 Logged: Payer: Bob, Description: Taxi, Amount: 15.00 USD
