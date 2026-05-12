@@ -7,7 +7,7 @@ import java.util.*;
  * This includes the room's unique identifier, the users participating in the room,
  * and the history of transactions.
  *
- * This class uses String IDs for users to ensure global uniqueness across
+ * This class uses String IDs for users to ensure uniqueness across
  * different devices during cloud synchronization.
  */
 public class Room {
