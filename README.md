@@ -138,4 +138,4 @@ The strategy interface for data persistence. Implementations include `LocalStora
     - *Example:* `storage.fetchRoom("swift-fox-12") -> Room object`
 
 ---
-*Developed as a Data Structures Final Project.*
+*Developed as a CS062 Final Project.*
