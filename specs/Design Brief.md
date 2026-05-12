@@ -80,3 +80,8 @@ Here is a technical summary of **QuickSplit** as it stands. This summary consoli
 1. Does every entity need to have an interface, cause that is inefficient/bad practice/bad code. In actuallity, if we wanted to actually write good code, we would have no interfaces because our architecture does not have any inheritance. Everything is its own entity, there are no multiple types of transactions, or quicksplitSystems, or DebtGraph. Just one type of each. DON'T MAKE ME WRITE BAD CODE!
 2. Check features, Make sure features are good.
 3. The DebtGraph could be removed. It is there because it is a "fancy" graph data structure, but if we want to be realistic, we could do this whole thing with simple lists. What does prof think about this?
+
+
+## Implementation Ideas
+
+Separation of concerns: The `System` handles the data structures (Model), the `CLI` handles the user and formatting (View/Controller), and the `CloudStorageService` handles the remote boundary.

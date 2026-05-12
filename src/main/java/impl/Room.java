@@ -55,6 +55,38 @@ public class Room {
         return Collections.unmodifiableList(transactions);
     }
 
+    /**
+     * Merges another Room object's data into this one.
+     * It adds any missing users and appends any transactions that do not
+     * already exist in this room based on their unique transaction IDs.
+     *
+     * @param other The room containing data to merge into this one.
+     */
+    public void merge(Room other) {
+        if (!this.roomId.equals(other.getRoomId())) {
+            throw new IllegalArgumentException(
+                "Cannot merge rooms with different IDs."
+            );
+        }
+
+        // merge users
+        for (Map.Entry<String, String> entry : other.getUsers().entrySet()) {
+            this.users.putIfAbsent(entry.getKey(), entry.getValue());
+        }
+
+        Set<String> existingTxIds = new HashSet<>();
+        for (Transaction t : this.transactions) {
+            existingTxIds.add(t.getTransactionId());
+        }
+
+        // add only transactions that are not already present
+        for (Transaction t : other.getTransactions()) {
+            if (!existingTxIds.contains(t.getTransactionId())) {
+                this.transactions.add(t);
+            }
+        }
+    }
+
     @Override
     public String toString() {
         return String.format(

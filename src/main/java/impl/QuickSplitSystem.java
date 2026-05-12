@@ -65,36 +65,25 @@ public class QuickSplitSystem {
         return activeRoom;
     }
 
+    /**
+     * Returns a list of all available room IDs currently managed by the system.
+     * @return A list of room ID strings.
+     */
+    public List<String> getAvailableRooms() {
+        return new ArrayList<>(rooms.keySet());
+    }
+
+    /**
+     * Returns all rooms managed by the system.
+     * @return A collection of Room objects.
+     */
+    public Collection<Room> getAllRooms() {
+        return rooms.values();
+    }
+
     public void addRoom(Room room) {
         rooms.put(room.getRoomId(), room);
         activeRoom = room;
-    }
-
-    /**
-     * Exports the active room to a JSON string using the custom serializer.
-     * @return The JSON representation of the active room.
-     */
-    public String exportActiveRoom() {
-        if (activeRoom == null) {
-            throw new IllegalStateException("No active room to export.");
-        }
-        return CustomJsonSerializer.serializeRooms(
-            Collections.singletonList(activeRoom)
-        );
-    }
-
-    /**
-     * Imports rooms from a JSON string and sets the last one as active.
-     * @param jsonString The JSON data representing rooms.
-     */
-    public void importRoom(String jsonString) {
-        List<Room> importedRooms = CustomJsonSerializer.deserializeRooms(
-            jsonString
-        );
-        for (Room room : importedRooms) {
-            rooms.put(room.getRoomId(), room);
-            activeRoom = room;
-        }
     }
 
     public void addUser(String userId, String name) {
@@ -151,7 +140,7 @@ public class QuickSplitSystem {
         Map<String, String> users = activeRoom.getUsers();
         List<Transaction> transactions = activeRoom.getTransactions();
 
-        // 1. Accumulation Scan
+        // accumulation Scan
         Map<String, Double> netBalances = new HashMap<>();
         for (String userId : users.keySet()) {
             netBalances.put(userId, 0.0);
@@ -237,9 +226,5 @@ public class QuickSplitSystem {
             this.id = id;
             this.balance = balance;
         }
-    }
-
-    public void sync(String roomId) {
-        // Future implementation for JSONBin.io cloud synchronization.
     }
 }

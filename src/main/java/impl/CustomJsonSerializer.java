@@ -29,7 +29,7 @@ public class CustomJsonSerializer {
      * Serializes a single room into a JSON object.
      * Uses an object mapping for users: { "uuid-string": "Name" }
      */
-    private static Json serializeRoom(Room room) {
+    public static Json serializeRoom(Room room) {
         Json usersObject = Json.object();
         for (Map.Entry<String, String> entry : room.getUsers().entrySet()) {
             usersObject.set(entry.getKey(), entry.getValue());
@@ -38,6 +38,7 @@ public class CustomJsonSerializer {
         Json transactionsArray = Json.array();
         for (Transaction t : room.getTransactions()) {
             Json tJson = Json.object()
+                .set("transactionId", t.getTransactionId())
                 .set("userId", t.getPayerId())
                 .set("amount", t.getAmount())
                 .set("originalCurrency", t.getOriginalCurrency())
@@ -74,7 +75,7 @@ public class CustomJsonSerializer {
     /**
      * Deserializes a single room JSON object into a Room instance.
      */
-    private static Room deserializeRoom(Json roomJson) {
+    public static Room deserializeRoom(Json roomJson) {
         String roomId = roomJson.at("roomId").asString();
         Room room = new Room(roomId);
 
@@ -92,7 +93,12 @@ public class CustomJsonSerializer {
         Json transactionsArray = roomJson.at("transactions");
         if (transactionsArray != null && transactionsArray.isArray()) {
             for (Json tJson : transactionsArray.asJsonList()) {
+                String transactionId = tJson.has("transactionId")
+                    ? tJson.at("transactionId").asString()
+                    : null;
+
                 Transaction t = new Transaction(
+                    transactionId,
                     tJson.at("userId").asString(),
                     tJson.at("amount").asDouble(),
                     tJson.at("originalCurrency").asString(),

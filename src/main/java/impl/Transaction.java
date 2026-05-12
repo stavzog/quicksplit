@@ -1,7 +1,10 @@
 package impl;
 
+import java.util.UUID;
+
 public class Transaction {
 
+    private final String transactionId;
     private final String payerId;
     private final double amount;
     private final String originalCurrency;
@@ -9,6 +12,10 @@ public class Transaction {
     private final double exchangeRate;
     private final String description;
 
+    /**
+     * Constructor for creating a completely new transaction.
+     * Automatically generates a unique transaction ID.
+     */
     public Transaction(
         String payerId,
         double amount,
@@ -17,12 +24,41 @@ public class Transaction {
         double exchangeRate,
         String description
     ) {
+        this.transactionId = UUID.randomUUID().toString();
         this.payerId = payerId;
         this.amount = amount;
         this.originalCurrency = originalCurrency;
         this.originalAmount = originalAmount;
         this.exchangeRate = exchangeRate;
         this.description = description;
+    }
+
+    /**
+     * Constructor for loading an existing transaction (e.g., from JSON or Cloud).
+     */
+    public Transaction(
+        String transactionId,
+        String payerId,
+        double amount,
+        String originalCurrency,
+        double originalAmount,
+        double exchangeRate,
+        String description
+    ) {
+        this.transactionId =
+            transactionId != null
+                ? transactionId
+                : UUID.randomUUID().toString();
+        this.payerId = payerId;
+        this.amount = amount;
+        this.originalCurrency = originalCurrency;
+        this.originalAmount = originalAmount;
+        this.exchangeRate = exchangeRate;
+        this.description = description;
+    }
+
+    public String getTransactionId() {
+        return transactionId;
     }
 
     public String getPayerId() {
