@@ -69,7 +69,7 @@ For testing, JUnit 5 is required. These dependencies are managed automatically b
 
 ## API Documentation
 
-The following public methods represent the core API of the QuickSplit engine. The internal implementation details and technical specifications of the project are outlined in the [Design Brief](docs\Design Brief.md).
+The following public methods represent the core API of the QuickSplit engine. The internal implementation details and technical specifications of the project are outlined in the [Design Brief](docs/Design Brief.md).
 
 ### `impl.QuickSplitSystem`
 
