@@ -1,3 +1,4 @@
+
 # Quicksplit
 
 Quicksplit is a lightweight, human-centered command-line utility for splitting group expenses. It is designed to eliminate the friction and "social overhead" that is associated with modern expense-sharing applications. Traditional tools frequently require users to download heavy mobile apps, create accounts, and navigate paywalls just to log a simple shared meal. This process discourages use of these tools. By following a Human-Centered Design (HCD) process, Quicksplit prioritizes the end-user's need for speed and simplicity. It solves the "barrier to entry" problem by providing a single-file executable that requires no installation: users simply run the tool and join a shared "room" using a unique ID.
@@ -42,6 +43,41 @@ This summary consolidates the Human-Centered Design (HCD) goals with the high-pe
 * **Role**: The optimized projection of the transaction log. It represents the most efficient flow of money between group members.
 * **Use Case**: The final output of the "Settle Up" command.
 
+### **Data Format and Serialization**
+
+In order to avoid using heavy external libraries for serialization, we came up with an efficient json schema for out data and we coded a custom serializer that converts transaction and room data into JSON. By taking control of the serialization process, we could avoid the overhead of reflection-based libraries while also using a data format that is more efficient and easier to work with for our app. Below is the JSON schema:
+
+``` json
+{
+  "rooms":[
+    {
+      "transactions":[
+        {
+          "amount":10.0,
+          "originalAmount":10.0,
+          "exchangeRate":1.0,
+          "description":"expense",
+          "originalCurrency":"USD",
+          "userId":"4cc2feab-ce2a-46d8-9000-f8364a4a1239"
+        },
+        /* ... */
+      ],
+      "roomId":"steady-wolf-26",
+      "users":{
+        "4cc2feab-ce2a-46d8-9000-f8364a4a1239":"Alice",
+        "d64286fc-3a1e-4f1d-9d02-fb91e68bd33b":"Bob",
+        /* ... */
+      }
+    }
+  ]
+}
+```
+
+Note: at the beginning of the project we created a synthetic csv [dataset](old_dataset_schema) with LLMs. However, we realized that JSON would be a much easier format to work with, especially because of JSONBin.io.
+
+### **Synthetic Data Generation**
+
+We generated synthetic transaction data to test our application using a custom data generator that simulates real-world expense scenarios. The script can be found at `docs/DataGenerator.java`. The dataset matches the JSON format that is used by the application. It is located in the project root as `synthetic_transactions.json`.
 
 ---
 
