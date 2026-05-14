@@ -1,4 +1,3 @@
-
 # Quicksplit
 
 Quicksplit is a lightweight, human-centered command-line utility for splitting group expenses. It is designed to eliminate the friction and "social overhead" that is associated with modern expense-sharing applications. Traditional tools frequently require users to download heavy mobile apps, create accounts, and navigate paywalls just to log a simple shared meal. This process discourages use of these tools. By following a Human-Centered Design (HCD) process, Quicksplit prioritizes the end-user's need for speed and simplicity. It solves the "barrier to entry" problem by providing a single-file executable that requires no installation: users simply run the tool and join a shared "room" using a unique ID.
