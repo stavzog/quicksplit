@@ -26,7 +26,7 @@ Instead of relying on reflection-based libraries (like Gson or Jackson) which in
 
 ## 2. Algorithmic Performance & Optimization
 
-QuickSplit was designed with **Data-Oriented Design (DOD)** principles in mind, opting for flat data structures and contiguous memory over heavily nested Object-Oriented "wrapper" structures.
+QuickSplit integrates some Data-Oriented Design (DOD) principles along with its OOP base, opting for flat data structures and contiguous memory over heavily nested Object-Oriented "wrapper" structures.
 
 ### 2.1 The Accumulation Scan: $O(N)$
 To calculate who owes what, the system projects the flat `List<Transaction>` into a temporary net balance map. 
