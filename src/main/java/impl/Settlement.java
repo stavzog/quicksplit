@@ -24,18 +24,30 @@ public class Settlement {
         this.currency = currency;
     }
 
+    /**
+     * Returns the ID of the debtor involved in this settlement.
+     */
     public String getDebtorId() {
         return debtorId;
     }
 
+    /**
+     * Returns the ID of the creditor involved in this settlement.
+     */
     public String getCreditorId() {
         return creditorId;
     }
 
+    /**
+     * Returns the amount of this settlement.
+     */
     public double getAmount() {
         return amount;
     }
 
+    /**
+     * Returns the currency of this settlement.
+     */
     public String getCurrency() {
         return currency;
     }

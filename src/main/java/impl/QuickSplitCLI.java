@@ -26,6 +26,10 @@ public class QuickSplitCLI {
         this.scanner = new Scanner(System.in);
     }
 
+    /**
+     * Starts the QuickSplit CLI, presenting the user with a welcome message and name input.
+     *
+     */
     public void start() {
         System.out.println("=== Welcome to QuickSplit ===");
 
@@ -166,6 +170,9 @@ public class QuickSplitCLI {
         return false;
     }
 
+    /**
+     * The main loop of the QuickSplit CLI, where user input is processed and commands are executed.
+     */
     private void mainLoop() {
         printHelp();
         while (true) {
@@ -223,6 +230,9 @@ public class QuickSplitCLI {
         }
     }
 
+    /**
+     * Handles the join command, joining a room by its ID.
+     */
     private void handleJoinCommand(String[] parts) {
         if (parts.length > 1) {
             String roomId = parts[1];
@@ -291,6 +301,9 @@ public class QuickSplitCLI {
         System.out.println(msg);
     }
 
+    /**
+     * Handles the view log command, displaying the transaction log for the active room.
+     */
     private void handleViewLog() {
         Room room = system.getActiveRoom();
         if (room == null) return;
@@ -318,6 +331,10 @@ public class QuickSplitCLI {
         }
     }
 
+    /**
+     * Handles the settle up command, calculating and displaying the settlement plan for the active room.
+     * @param parts The command parts, including the target currency if provided.
+     */
     private void handleSettleUp(String[] parts) {
         if (system.getActiveRoom() == null) return;
 
@@ -336,6 +353,9 @@ public class QuickSplitCLI {
         }
     }
 
+    /**
+     * Ensures that the storage service is initialized, prompting the user to select a storage option if necessary.
+     */
     private void ensureStorageService() {
         if (storageService != null) return;
 
@@ -360,6 +380,9 @@ public class QuickSplitCLI {
         }
     }
 
+    /**
+     * Handles the save command, saving the current state of the system to storage.
+     */
     private void handleSave() {
         ensureStorageService();
 
@@ -402,7 +425,9 @@ public class QuickSplitCLI {
         }
     }
 
-    // sync the local user cache with the system's user map
+    /**
+     * Syncs the local user cache with the system's user map.
+     */
     private void syncLocalUserCache() {
         Map<String, String> roomUsers = system.getUsers();
         for (Map.Entry<String, String> entry : roomUsers.entrySet()) {
@@ -413,6 +438,9 @@ public class QuickSplitCLI {
         }
     }
 
+    /**
+     * Prints the help menu, listing all available commands.
+     */
     private void printHelp() {
         System.out.println("\nCommands:");
         System.out.println(

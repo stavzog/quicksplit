@@ -20,6 +20,7 @@ import java.util.Map;
 public class CloudStorageService implements StorageService {
 
     private static final String API_BASE_URL = "https://api.jsonbin.io/v3/b/";
+    // this is probably a security concern
     private static final String ACCESS_KEY =
         "$2a$10$Dv6aBszMHyEwenDeGfsh7.LbtIiKOOD4hb5ZRUs2pVlqMkcGdPTLO";
     private static final String DEFAULT_BIN_ID = "6a026cf6250b1311c3379279";

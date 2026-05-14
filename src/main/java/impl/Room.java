@@ -20,6 +20,9 @@ public class Room {
         this.roomId = roomId;
     }
 
+    /**
+     * Returns the unique identifier of this room.
+     */
     public String getRoomId() {
         return roomId;
     }

@@ -78,7 +78,7 @@ public class CurrencyService {
         }
 
         try {
-            // New Frankfurter v2 format: https://api.frankfurter.dev/v2/rate/EUR/USD
+            // format: https://api.frankfurter.dev/v2/rate/EUR/USD
             String url = String.format("%s/%s/%s", API_BASE_URL, from, to);
 
             HttpRequest request = HttpRequest.newBuilder()
@@ -93,7 +93,7 @@ public class CurrencyService {
             );
 
             if (response.statusCode() != 200) {
-                // Parse error message if available
+                // parse error message
                 String errorMsg;
                 try {
                     errorMsg = Json.read(response.body())
@@ -105,14 +105,13 @@ public class CurrencyService {
                 throw new RuntimeException("API Error: " + errorMsg);
             }
 
-            // v2 response format: {"amount":1.0,"base":"EUR","date":"2024-05-22","quote":"USD","rate":1.0825}
+            // format: {"amount":1.0,"base":"EUR","date":"2024-05-22","quote":"USD","rate":1.0825}
             Json data = Json.read(response.body());
             double rate = data.at("rate").asDouble();
 
-            // Cache the retrieved rate
             ratesCache.put(cacheKey, rate);
 
-            // Cache the inverse rate to be efficient
+            // cache the inverse rate to be efficient
             ratesCache.put(to + "_" + from, 1.0 / rate);
 
             return rate;

@@ -81,6 +81,10 @@ public class QuickSplitSystem {
         return rooms.values();
     }
 
+    /**
+     * Adds a new room to the system.
+     * @param room The room to add.
+     */
     public void addRoom(Room room) {
         rooms.put(room.getRoomId(), room);
         if (activeRoom == null) {
@@ -88,12 +92,21 @@ public class QuickSplitSystem {
         }
     }
 
+    /**
+     * Adds a new user to the active room.
+     * @param userId The user's ID.
+     * @param name The user's name.
+     */
     public void addUser(String userId, String name) {
         if (activeRoom != null) {
             activeRoom.addUser(userId, name);
         }
     }
 
+    /**
+     * Returns all users in the active room.
+     * @return A map of user ID to name.
+     */
     public Map<String, String> getUsers() {
         return activeRoom != null
             ? activeRoom.getUsers()
@@ -102,6 +115,11 @@ public class QuickSplitSystem {
 
     /**
      * Logs an expense for the active room with automatic conversion to base currency.
+     * @param payerId The ID of the payer.
+     * @param amount The amount of the expense.
+     * @param currency The currency of the expense.
+     * @param description The description of the expense.
+     * @return The logged transaction.
      */
     public Transaction logExpense(
         String payerId,
@@ -133,6 +151,8 @@ public class QuickSplitSystem {
 
     /**
      * Calculates the settlement plan for the active room using the Greedy Two-Pointer algorithm.
+     * @param targetCurrency The currency to settle up in.
+     * @return A list of settlement transactions.
      */
     public List<Settlement> calculateSettleUp(String targetCurrency) {
         if (activeRoom == null || activeRoom.getUsers().isEmpty()) {
@@ -215,6 +235,10 @@ public class QuickSplitSystem {
         return settlements;
     }
 
+    /**
+     * Calculates the settlement plan in the base currency for the active room using the Greedy Two-Pointer algorithm.
+     * @return A list of Settlement objects.
+     */
     public List<Settlement> calculateSettleUp() {
         return calculateSettleUp(baseCurrency);
     }
@@ -230,6 +254,10 @@ public class QuickSplitSystem {
         }
     }
 
+    /**
+     * Returns the base currency of the system.
+     * @return The base currency.
+     */
     public String getBaseCurrency() {
         return baseCurrency;
     }

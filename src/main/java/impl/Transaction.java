@@ -57,30 +57,51 @@ public class Transaction {
         this.description = description;
     }
 
+    /**
+     * Returns the unique identifier of this transaction.
+     */
     public String getTransactionId() {
         return transactionId;
     }
 
+    /**
+     * Returns the ID of the payer involved in this transaction.
+     */
     public String getPayerId() {
         return payerId;
     }
 
+    /**
+     * Returns the amount of this transaction.
+     */
     public double getAmount() {
         return amount;
     }
 
+    /**
+     * Returns the original currency of this transaction.
+     */
     public String getOriginalCurrency() {
         return originalCurrency;
     }
 
+    /**
+     * Returns the original amount of this transaction.
+     */
     public double getOriginalAmount() {
         return originalAmount;
     }
 
+    /**
+     * Returns the exchange rate of this transaction.
+     */
     public double getExchangeRate() {
         return exchangeRate;
     }
 
+    /**
+     * Returns the description of this transaction.
+     */
     public String getDescription() {
         return description;
     }

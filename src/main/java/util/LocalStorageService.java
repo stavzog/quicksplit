@@ -2,13 +2,11 @@ package util;
 
 import impl.CustomJsonSerializer;
 import impl.Room;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 
 /**
  * Service for handling local file-based persistence.
@@ -67,6 +65,6 @@ public class LocalStorageService implements StorageService {
                 return room;
             }
         }
-        return null; // Room not found in this file
+        return null; // room not found in this file
     }
 }

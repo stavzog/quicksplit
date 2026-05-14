@@ -79,7 +79,7 @@ public class CustomJsonSerializer {
         String roomId = roomJson.at("roomId").asString();
         Room room = new Room(roomId);
 
-        // Deserialize Users Map (Keys are String UUIDs)
+        // deserialize users map (keys are string UUIDs)
         Json usersJson = roomJson.at("users");
         if (usersJson != null && usersJson.isObject()) {
             for (Map.Entry<String, Json> entry : usersJson
@@ -89,7 +89,7 @@ public class CustomJsonSerializer {
             }
         }
 
-        // Deserialize Transactions
+        // deserialize transactions
         Json transactionsArray = roomJson.at("transactions");
         if (transactionsArray != null && transactionsArray.isArray()) {
             for (Json tJson : transactionsArray.asJsonList()) {
